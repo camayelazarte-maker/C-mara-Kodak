@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#feb827">
+  <title>Cámara Kodak | Modelo 3D y realidad aumentada</title>
+
+  <style>
+    :root {
+      --amarillo: #feb827;
+      --rojo: #bd1d17;
+      --crema: #fff8e9;
+      --crema-2: #fff1d2;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { min-height: 100%; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      min-height: 100svh;
+      padding: 22px 18px 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: var(--amarillo);
+      color: var(--rojo);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .page {
+      width: min(100%, 1040px);
+      min-height: calc(100svh - 40px);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    header {
+      text-align: center;
+      position: relative;
+      padding: 0 52px;
+    }
+
+    .heading-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    h1 {
+      margin: 0;
+      color: var(--rojo);
+      font-size: clamp(25px, 4vw, 34px);
+      line-height: 1.15;
+      font-weight: 800;
+      letter-spacing: -0.7px;
+    }
+
+    .intro {
+      max-width: 680px;
+      margin: 10px auto 0;
+      color: var(--rojo);
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    .camera-button {
+      width: 44px;
+      height: 44px;
+      flex: 0 0 44px;
+      display: grid;
+      place-items: center;
+      border: 2px solid var(--rojo);
+      border-radius: 50%;
+      background: var(--crema);
+      color: var(--rojo);
+      font-size: 23px;
+      cursor: pointer;
+      box-shadow: 0 3px 0 rgba(117, 20, 16, 0.16);
+      transition: transform 120ms ease;
+    }
+
+    .camera-button:active { transform: scale(0.9); }
+
+    .viewer-card {
+      flex: 1;
+      min-height: 420px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border: 2px solid var(--rojo);
+      border-radius: 22px;
+      background: var(--crema);
+      box-shadow: 0 8px 0 rgba(117, 20, 16, 0.12);
+    }
+
+    .viewer-heading {
+      min-height: 49px;
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid rgba(189, 29, 23, 0.18);
+      color: var(--rojo);
+      font-size: 12px;
+      font-weight: 750;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+    }
+
+    .viewer-heading .hint {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0;
+      text-transform: none;
+      text-align: right;
+    }
+
+    #viewer {
+      position: relative;
+      flex: 1;
+      min-height: 345px;
+      overflow: hidden;
+      background: var(--crema);
+      touch-action: pan-y;
+    }
+
+    #viewer canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      outline: none;
+      touch-action: none;
+    }
+
+    .loading-message {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      color: var(--rojo);
+      background: var(--crema);
+      text-align: center;
+      font-size: 15px;
+      font-weight: 650;
+      line-height: 1.45;
+    }
+
+    .loading-message[hidden] { display: none; }
+
+    .viewer-tools {
+      position: absolute;
+      right: 16px;
+      bottom: 16px;
+      z-index: 3;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .zoom-button {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--rojo);
+      border-radius: 12px;
+      background: rgba(255, 248, 233, 0.95);
+      color: var(--rojo);
+      font-size: 24px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(117, 20, 16, 0.12);
+    }
+
+    .zoom-button:active { transform: scale(0.94); }
+    .zoom-button:disabled { opacity: 0.45; cursor: default; }
+
+    .bottom-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding-bottom: 2px;
+      text-align: center;
+    }
+
+    .ar-button {
+      min-height: 50px;
+      padding: 13px 28px;
+      border: 0;
+      border-radius: 28px;
+      background: var(--rojo);
+      color: var(--amarillo);
+      font-size: 16px;
+      font-weight: 750;
+      cursor: pointer;
+      box-shadow: 0 5px 0 rgba(117, 20, 16, 0.2);
+      transition: transform 120ms ease, background 120ms ease;
+    }
+
+    .ar-button:hover { background: #a71914; }
+    .ar-button:active { transform: translateY(2px) scale(0.98); }
+    .ar-button:disabled { opacity: 0.55; cursor: wait; }
+
+    .instructions {
+      margin: 0;
+      max-width: 760px;
+      color: var(--rojo);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .camera-sparkle {
+      position: fixed;
+      z-index: 20;
+      pointer-events: none;
+      font-size: 21px;
+      line-height: 1;
+      animation: cameraBurst 850ms ease-out forwards;
+    }
+
+    @keyframes cameraBurst {
+      0% { opacity: 1; transform: translate(0, 0) scale(0.45) rotate(0deg); }
+      100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(1.25) rotate(var(--rot)); }
+    }
+
+    .quicklook-link {
+      position: fixed;
+      left: 0;
+      bottom: 0;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .quicklook-link img { width: 1px; height: 1px; }
+
+    @media (max-width: 600px) {
+      body { padding: 16px 12px 12px; }
+      .page { min-height: calc(100svh - 28px); gap: 12px; }
+      header { padding: 0 4px; }
+      .heading-row { gap: 8px; }
+      .camera-button { width: 39px; height: 39px; flex-basis: 39px; font-size: 21px; }
+      .intro { margin-top: 8px; font-size: 13px; }
+      .viewer-card { min-height: 380px; border-radius: 17px; }
+      .viewer-heading { padding: 10px 12px; font-size: 10px; }
+      .viewer-heading .hint { max-width: 48%; font-size: 10px; }
+      #viewer { min-height: 310px; }
+      .ar-button { min-height: 46px; padding: 12px 22px; font-size: 14px; }
+      .instructions { font-size: 11px; }
+    }
+
+    @media (max-height: 720px) and (min-width: 601px) {
+      body { padding-top: 12px; }
+      .page { gap: 10px; min-height: calc(100svh - 24px); }
+      .intro { margin-top: 6px; }
+      .viewer-card { min-height: 350px; }
+      #viewer { min-height: 285px; }
+    }
+  </style>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div class="heading-row">
+        <h1>Cámara Kodak</h1>
+        <button class="camera-button" id="cameraButton" type="button" aria-label="Lanzar camaritas">📸</button>
+      </div>
+      <p class="intro">¡Bienvenido! Acá vas a poder observar y poner a prueba en realidad aumentada la camarita digital Kodak.</p>
+    </header>
+
+    <main class="viewer-card" aria-label="Visor interactivo del modelo 3D">
+      <div class="viewer-heading">
+        <span>Modelo 3D interactivo</span>
+        <span class="hint">Girá · acercá · explorá</span>
+      </div>
+
+      <div id="viewer">
+        <div class="loading-message" id="loadingMessage" role="status" aria-live="polite">
+          Cargando el modelo 3D de tu cámara Kodak…
+        </div>
+        <div class="viewer-tools" aria-label="Controles de zoom">
+          <button class="zoom-button" id="zoomIn" type="button" aria-label="Acercar" disabled>+</button>
+          <button class="zoom-button" id="zoomOut" type="button" aria-label="Alejar" disabled>−</button>
+        </div>
+      </div>
+    </main>
+
+    <footer class="bottom-area">
+      <button class="ar-button" id="arButton" type="button" disabled>🎇 Ver en tu espacio (AR) 🎇</button>
+      <p class="instructions" id="instructions">Arrastrá para girar la cámara. Usá la rueda del mouse o pellizcá la pantalla para acercar y alejar.</p>
+    </footer>
+  </div>
+
+  <!-- En iPhone/iPad, Safari abre este enlace con AR Quick Look. -->
+  <a class="quicklook-link" id="quickLookLink" rel="ar" href="./camara-kodak.usdz" aria-label="Abrir cámara en realidad aumentada">
+    <img alt="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j9l8AAAAASUVORK5CYII=">
+  </a>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { USDLoader } from 'three/addons/loaders/USDLoader.js';
+
+    const viewer = document.getElementById('viewer');
+    const loadingMessage = document.getElementById('loadingMessage');
+    const arButton = document.getElementById('arButton');
+    const instructions = document.getElementById('instructions');
+    const zoomInButton = document.getElementById('zoomIn');
+    const zoomOutButton = document.getElementById('zoomOut');
+    const quickLookLink = document.getElementById('quickLookLink');
+
+    let model = null;
+    let controls = null;
+    let hitTestSource = null;
+    let reticle = null;
+    let originalTransform = null;
+    let maxModelDimension = 1;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color('#fff8e9');
+
+    const camera = new THREE.PerspectiveCamera(36, 1, 0.001, 1000);
+    camera.position.set(2, 1.3, 2.8);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(viewer.clientWidth, viewer.clientHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.15;
+    viewer.insertBefore(renderer.domElement, loadingMessage);
+
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x9b6b36, 2.0));
+
+    const keyLight = new THREE.DirectionalLight(0xffffff, 2.6);
+    keyLight.position.set(4, 7, 5);
+    scene.add(keyLight);
+
+    const fillLight = new THREE.DirectionalLight(0xffe4bd, 1.1);
+    fillLight.position.set(-5, 2, -4);
+    scene.add(fillLight);
+
+    controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = false;
+    controls.enablePan = true;
+    controls.screenSpacePanning = true;
+
+    // Retícula para detectar una superficie durante la experiencia AR en Android.
+    const reticleGeometry = new THREE.RingGeometry(0.07, 0.095, 36);
+    reticleGeometry.rotateX(-Math.PI / 2);
+    reticle = new THREE.Mesh(
+      reticleGeometry,
+      new THREE.MeshBasicMaterial({ color: '#bd1d17', side: THREE.DoubleSide })
+    );
+    reticle.matrixAutoUpdate = false;
+    reticle.visible = false;
+    scene.add(reticle);
+
+    function showMessage(message) {
+      loadingMessage.textContent = message;
+      loadingMessage.hidden = false;
+    }
+
+    function fitCameraToModel(object) {
+      object.updateMatrixWorld(true);
+      const bounds = new THREE.Box3().setFromObject(object);
+      const size = bounds.getSize(new THREE.Vector3());
+      const center = bounds.getCenter(new THREE.Vector3());
+      maxModelDimension = Math.max(size.x, size.y, size.z);
+
+      if (!Number.isFinite(maxModelDimension) || maxModelDimension <= 0) {
+        throw new Error('El archivo USDZ no contiene una geometría 3D visible.');
+      }
+
+      // Centra el modelo sin cambiar sus proporciones ni su escala original.
+      object.position.sub(center);
+
+      const halfFov = THREE.MathUtils.degToRad(camera.fov / 2);
+      const distance = (maxModelDimension * 0.5) / Math.tan(halfFov) * 1.55;
+      camera.near = Math.max(maxModelDimension / 1000, 0.00001);
+      camera.far = Math.max(maxModelDimension * 100, 100);
+      camera.position.set(distance * 0.9, distance * 0.58, distance * 1.2);
+      camera.updateProjectionMatrix();
+
+      controls.target.set(0, 0, 0);
+      controls.minDistance = Math.max(maxModelDimension * 0.18, 0.0001);
+      controls.maxDistance = Math.max(maxModelDimension * 15, 1);
+      controls.update();
+
+      originalTransform = {
+        position: object.position.clone(),
+        quaternion: object.quaternion.clone(),
+        scale: object.scale.clone()
+      };
+    }
+
+    // El USDZ contiene el modelo completo. Se carga directamente para no depender
+    // del GLB adjunto, que está vacío.
+    if (window.location.protocol === 'file:') {
+      showMessage('Para cargar el modelo 3D, abrí esta página desde un servidor local o publicala en una dirección HTTPS. No la abras con doble clic.');
+    } else {
+      const loader = new USDLoader();
+      loader.load(
+        './camara-kodak-web.usdz',
+        (loadedModel) => {
+          try {
+            model = loadedModel;
+            scene.add(model);
+            fitCameraToModel(model);
+            loadingMessage.hidden = true;
+            arButton.disabled = false;
+            zoomInButton.disabled = false;
+            zoomOutButton.disabled = false;
+          } catch (error) {
+            console.error(error);
+            showMessage('No se pudo preparar la cámara 3D. Revisá que el archivo camara-kodak.usdz esté completo.');
+          }
+        },
+        undefined,
+        (error) => {
+          console.error('Error al cargar el modelo USDZ:', error);
+          showMessage('No se pudo cargar la cámara. Comprobá que camara-kodak.usdz esté en la misma carpeta que index.html y que la página esté publicada en HTTPS.');
+        }
+      );
+    }
+
+    function zoom(factor) {
+      if (!model || !controls || renderer.xr.isPresenting) return;
+      const direction = camera.position.clone().sub(controls.target);
+      const distance = THREE.MathUtils.clamp(
+        direction.length() * factor,
+        controls.minDistance,
+        controls.maxDistance
+      );
+      direction.setLength(distance);
+      camera.position.copy(controls.target).add(direction);
+      controls.update();
+    }
+
+    zoomInButton.addEventListener('click', () => zoom(0.8));
+    zoomOutButton.addEventListener('click', () => zoom(1.25));
+
+    function isAppleMobile() {
+      return /iPad|iPhone|iPod/i.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
+
+    async function startWebXR() {
+      if (!window.isSecureContext) {
+        throw new Error('La realidad aumentada necesita una página HTTPS o localhost.');
+      }
+      if (!navigator.xr || !(await navigator.xr.isSessionSupported('immersive-ar'))) {
+        throw new Error('Este navegador no ofrece AR WebXR. Probá desde un iPhone/iPad con Safari o desde un Android compatible con ARCore y Chrome.');
+      }
+
+      const session = await navigator.xr.requestSession('immersive-ar', {
+        requiredFeatures: ['hit-test'],
+        optionalFeatures: ['dom-overlay'],
+        domOverlay: { root: document.body }
+      });
+
+      renderer.xr.enabled = true;
+      renderer.xr.setReferenceSpaceType('local');
+      await renderer.xr.setSession(session);
+
+      controls.enabled = false;
+      model.visible = false;
+      reticle.visible = false;
+      instructions.textContent = 'Mové el celular lentamente para detectar una superficie y tocá la pantalla para colocar la cámara.';
+
+      const viewerSpace = await session.requestReferenceSpace('viewer');
+      hitTestSource = await session.requestHitTestSource({ space: viewerSpace });
+
+      session.addEventListener('select', () => {
+        if (!reticle.visible || !model) return;
+        model.position.setFromMatrixPosition(reticle.matrix);
+        model.quaternion.setFromRotationMatrix(reticle.matrix);
+        model.visible = true;
+      });
+
+      session.addEventListener('end', () => {
+        hitTestSource = null;
+        reticle.visible = false;
+        if (model && originalTransform) {
+          model.position.copy(originalTransform.position);
+          model.quaternion.copy(originalTransform.quaternion);
+          model.scale.copy(originalTransform.scale);
+          model.visible = true;
+        }
+        controls.enabled = true;
+        instructions.textContent = 'Arrastrá para girar la cámara. Usá la rueda del mouse o pellizcá la pantalla para acercar y alejar.';
+      });
+    }
+
+    arButton.addEventListener('click', async () => {
+      if (!model) return;
+      arButton.disabled = true;
+      try {
+        if (isAppleMobile()) {
+          // Safari en iPhone/iPad abre el USDZ en Quick Look.
+          quickLookLink.click();
+        } else {
+          await startWebXR();
+        }
+      } catch (error) {
+        console.error(error);
+        window.alert(error.message || 'No se pudo iniciar la realidad aumentada en este dispositivo.');
+      } finally {
+        arButton.disabled = false;
+      }
+    });
+
+    renderer.setAnimationLoop((time, frame) => {
+      if (frame && hitTestSource) {
+        const referenceSpace = renderer.xr.getReferenceSpace();
+        const hitResults = frame.getHitTestResults(hitTestSource);
+        if (hitResults.length > 0) {
+          const hitPose = hitResults[0].getPose(referenceSpace);
+          reticle.visible = true;
+          reticle.matrix.fromArray(hitPose.transform.matrix);
+        } else {
+          reticle.visible = false;
+        }
+      } else if (controls.enabled) {
+        controls.update();
+      }
+      renderer.render(scene, camera);
+    });
+
+    window.addEventListener('resize', () => {
+      const width = viewer.clientWidth;
+      const height = viewer.clientHeight;
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height);
+    });
+
+    // El botón de cámara dispara emojis 📷 y 📸 alrededor del ícono.
+    const cameraButton = document.getElementById('cameraButton');
+    cameraButton.addEventListener('click', () => {
+      const rect = cameraButton.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const emojis = ['📸', '📷', '📸', '📷'];
+
+      for (let i = 0; i < 10; i++) {
+        const particle = document.createElement('span');
+        particle.className = 'camera-sparkle';
+        particle.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 35 + Math.random() * 38;
+        particle.style.left = `${centerX}px`;
+        particle.style.top = `${centerY}px`;
+        particle.style.setProperty('--dx', `${Math.cos(angle) * distance}px`);
+        particle.style.setProperty('--dy', `${Math.sin(angle) * distance}px`);
+        particle.style.setProperty('--rot', `${Math.round(Math.random() * 50 - 25)}deg`);
+        document.body.appendChild(particle);
+        particle.addEventListener('animationend', () => particle.remove(), { once: true });
+      }
+    });
+  </script>
+</body>
+</html>
